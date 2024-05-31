@@ -43,6 +43,11 @@ dependencies {
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
 }
 
+bootJar {
+    archiveBaseName = 'FaithSafeWebApi'
+    version = '0.1.0-ALPHA'
+}
+
 tasks.named('test') {
     useJUnitPlatform()
 }
