@@ -12,6 +12,9 @@ COPY settings.gradle .
 # Copy source code
 COPY src src
 
+# Ensure gradlew is executable
+RUN chmod +x gradlew
+
 # Build the application
 RUN ./gradlew bootJar
 
@@ -28,4 +31,5 @@ COPY --from=builder ${JAR_FILE} app.jar
 COPY src/main/resources/application-docker.properties application-docker.properties
 
 # Set the entry point
-ENTRYPOINT ["java", "-Dspring.profiles.active=docker", "-jar", "/app.jar"]
+ENV SERVER_PORT=8080
+ENTRYPOINT ["java", "-Dspring.profiles.active=docker", "-Dserver.port=${SERVER_PORT}", "-jar", "/app.jar"]
