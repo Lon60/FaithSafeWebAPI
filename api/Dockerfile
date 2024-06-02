@@ -34,4 +34,4 @@ COPY src/main/resources/application-docker.properties application-docker.propert
 ENV SERVER_PORT=8080
 ENV DATABASE_USERNAME=root
 ENV DATABASE_PASSWORD=root
-ENTRYPOINT ["sh", "-c", "java -Dspring.profiles.active=docker -Dserver.port=${SERVER_PORT} -Dspring.datasource.url=jdbc:postgresql://$HOST_NAME:5432/faithsafeapi -Dspring.datasource.username=${DATABASE_USERNAME} -Dspring.datasource.password=${DATABASE_PASSWORD} -jar /app.jar"]
+ENTRYPOINT ["sh", "-c", "java -Dspring.profiles.active=docker -Dserver.port=${SERVER_PORT} -Dspring.datasource.username=${DATABASE_USERNAME} -Dspring.datasource.password=${DATABASE_PASSWORD} -jar /app.jar"]

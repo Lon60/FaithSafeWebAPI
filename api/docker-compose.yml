@@ -14,7 +14,6 @@ services:
     build: .
     container_name: FaithSafeWebAPI
     environment:
-      HOST_NAME: ${HOST_NAME:-postgres}
       DATABASE_USERNAME: ${DATABASE_USERNAME:-root}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:-root}
     ports:
