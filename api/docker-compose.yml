@@ -5,14 +5,17 @@ services:
     container_name: FaithSafeDB
     environment:
       POSTGRES_DB: faithsafe-api
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: root
+      POSTGRES_USER: ${DATABASE_USERNAME:-root}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-root}
     ports:
       - "5432:5432"
 
   app:
     build: .
     container_name: FaithSafeWebAPI
+    environment:
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-root}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-root}
     ports:
       - "8080:8080"
     depends_on:

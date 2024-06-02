@@ -30,6 +30,8 @@ COPY --from=builder ${JAR_FILE} app.jar
 # Copy the custom properties file
 COPY src/main/resources/application-docker.properties application-docker.properties
 
-# Set the entry point
+# Set the entry point and pass environment variables
 ENV SERVER_PORT=8080
-ENTRYPOINT ["java", "-Dspring.profiles.active=docker", "-Dserver.port=${SERVER_PORT}", "-jar", "/app.jar"]
+ENV DATABASE_USERNAME=root
+ENV DATABASE_PASSWORD=root
+ENTRYPOINT ["sh", "-c", "java -Dspring.profiles.active=docker -Dserver.port=${SERVER_PORT} -Dspring.datasource.username=${DATABASE_USERNAME} -Dspring.datasource.password=${DATABASE_PASSWORD} -jar /app.jar"]
