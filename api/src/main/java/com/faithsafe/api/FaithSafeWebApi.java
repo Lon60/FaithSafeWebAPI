@@ -9,4 +9,5 @@ public class FaithSafeWebApi {
   public static void main(String[] args) {
     SpringApplication.run(FaithSafeWebApi.class, args);
   }
+
 }

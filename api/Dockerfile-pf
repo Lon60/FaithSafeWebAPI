@@ -1,0 +1,33 @@
+# Verwenden eines offiziellen Debian-Images als Basis
+FROM debian:latest
+
+# Setzen der Umgebungsvariablen
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Installieren der notwendigen Pakete
+RUN apt-get update && apt-get install -y postfix mailutils curl && apt-get clean
+
+# Konfigurieren von Postfix für den lokalen Gebrauch
+RUN echo "postfix postfix/mailname string faithsafe.net" | debconf-set-selections
+RUN echo "postfix postfix/main_mailer_type string 'Internet Site'" | debconf-set-selections
+
+# Hauptkonfigurationsdatei für Postfix generieren
+RUN postconf -e 'myhostname = faithsafe.net' \
+    && postconf -e 'mydomain = faithsafe.net' \
+    && postconf -e 'myorigin = $mydomain' \
+    && postconf -e 'inet_interfaces = all' \
+    && postconf -e 'inet_protocols = ipv4' \
+    && postconf -e 'mydestination = $myhostname, localhost.$mydomain, localhost' \
+    && postconf -e 'mynetworks = 127.0.0.0/8, [::1]/128' \
+    && postconf -e 'relayhost = [localhost]:1025'
+
+# MailHog herunterladen und installieren
+RUN curl -L -o /usr/local/bin/mailhog https://github.com/mailhog/MailHog/releases/download/v1.0.1/MailHog_linux_amd64 \
+    && chmod +x /usr/local/bin/mailhog
+
+# Exponieren der relevanten Ports
+EXPOSE 1025
+EXPOSE 8025
+
+# Startskript für Postfix und MailHog
+CMD service postfix start && mailhog

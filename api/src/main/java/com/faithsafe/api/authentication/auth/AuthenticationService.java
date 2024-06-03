@@ -9,4 +9,6 @@ public interface AuthenticationService {
   AuthenticationResponse authenticate(AuthenticationRequest request);
 
   AuthenticationResponse refreshToken(HttpServletRequest request);
+
+  void verifyEmail(int code);
 }

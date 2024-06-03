@@ -22,7 +22,7 @@ public class AuthenticationController {
 
   @Operation(description = """
       # Info
-      Registers a user and returns the JWT.\s
+      Registers a user.\s
       ## Security
       This endpoint does not require a role unless an **ADMIN** user is created.
       """, security = {@SecurityRequirement(name = "BearerAuth")})
@@ -71,5 +71,16 @@ public class AuthenticationController {
     headers.add("Authorization", "Bearer " + authResponse.getAccessToken());
     headers.add("Authorization", "Refresh " + authResponse.getRefreshToken());
     return headers;
+  }
+
+  @Operation(description = """
+      # Info
+      Verify email adress.\s
+      ## Security
+      This endpoint needs the jwt (in header) and the code.
+      """, security = {@SecurityRequirement(name = "BearerAuth")})
+  @PostMapping("/auth/verify")
+  public void verifyEmail(int code) {
+    authenticationService.verifyEmail(code);
   }
 }

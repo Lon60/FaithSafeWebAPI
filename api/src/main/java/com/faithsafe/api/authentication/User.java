@@ -12,6 +12,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -32,10 +33,15 @@ public class User implements UserDetails {
 
   private String password;
 
+  @NotNull
   private String email;
 
   @Enumerated(EnumType.STRING)
   private Role role;
+
+  private boolean emailVerified;
+
+  private int emailVerificationCode;
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
