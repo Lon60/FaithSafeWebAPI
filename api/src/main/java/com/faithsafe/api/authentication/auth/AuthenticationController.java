@@ -8,10 +8,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.view.RedirectView;
 
 @RestController
 @RequiredArgsConstructor
@@ -77,10 +80,12 @@ public class AuthenticationController {
       # Info
       Verify email adress.\s
       ## Security
-      This endpoint needs the jwt (in header) and the code.
+      This end point does **not require a role**.
       """, security = {@SecurityRequirement(name = "BearerAuth")})
-  @PostMapping("/auth/verify")
-  public void verifyEmail(int code) {
-    authenticationService.verifyEmail(code);
+  @GetMapping("/auth/verify")
+  public RedirectView verifyEmail(
+      @RequestParam String token
+  ) {
+    return authenticationService.verifyEmail(token);
   }
 }

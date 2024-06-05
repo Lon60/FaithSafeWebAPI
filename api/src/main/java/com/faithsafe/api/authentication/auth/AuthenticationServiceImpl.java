@@ -1,7 +1,7 @@
 package com.faithsafe.api.authentication.auth;
 
+import com.faithsafe.api.authentication.TokenGenerator;
 import com.faithsafe.api.email.EmailService;
-import java.util.Random;
 import com.faithsafe.api.authentication.JwtService;
 import com.faithsafe.api.authentication.Role;
 import com.faithsafe.api.authentication.User;
@@ -9,7 +9,9 @@ import com.faithsafe.api.authentication.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -23,11 +25,15 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.view.RedirectView;
 
 @Service
 @RequiredArgsConstructor
-public class AuthenticationServiceImpl implements AuthenticationService{
+public class AuthenticationServiceImpl implements AuthenticationService {
 
+  private static final String EMAIL_PATTERN =
+      "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$";
+  private static final Pattern emailPattern = Pattern.compile(EMAIL_PATTERN);
   private final EmailService emailService;
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
@@ -40,7 +46,8 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 
     if (Objects.equals(request.getRole(), "ADMIN")) {
       if (!authentication.getAuthorities().contains(adminRole)) {
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only admins can create admin accounts");
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+            "Only admins can create admin accounts");
       }
     }
 
@@ -56,38 +63,47 @@ public class AuthenticationServiceImpl implements AuthenticationService{
     if (userRepository.findByUsername(request.getUsername()).isPresent()) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username already exists");
     }
+
+    if (!emailPattern.matcher(request.getEmail()).matches()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email is not valid");
+    }
     return register(request);
   }
 
-  public void verifyEmail(int code) {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-    User user = userRepository.findByUsername(authentication.getName()).orElseThrow();
-    if (user.isEmailVerified()) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email already verified");
-    }
-    if (user.getEmailVerificationCode() == code) {
-      user.setEmailVerified(true);
-      userRepository.save(user);
-    } else {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid verification code");
+  public RedirectView verifyEmail(String token) {
+    try {
+      User user = userRepository.findByEmailVerificationToken(token).orElseThrow();
+      if (user.isEmailVerified()) {
+        return new RedirectView("https://faithsafe.net/login?emailverified=false");
+      }
+      if (Objects.equals(user.getEmailVerificationToken(), token)) {
+        user.setEmailVerified(true);
+        userRepository.save(user);
+        return new RedirectView("https://faithsafe.net/login?emailverified=true");
+      } else {
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid verification token");
+      }
+    } catch (NoSuchElementException e) {
+      return new RedirectView("https://faithsafe.net/login?emailverified=false");
     }
   }
 
   private AuthenticationResponse register(RegisterRequest request) {
-    Random random = new Random();
-
     Role assignedRole = Objects.equals(request.getRole(), "ADMIN") ? Role.ADMIN : Role.USER;
     User user = User.builder().username(request.getUsername()).email(request.getEmail())
         .password(passwordEncoder.encode(request.getPassword())).role(assignedRole).build();
-
-    user.setEmailVerified(false);
-    user.setEmailVerificationCode(random.nextInt((999999 - 100000) + 1) + 100000);
     userRepository.save(user);
 
-    emailService.sendSimpleEmail(user.getEmail(), "Verify Your FaithSafe Account", "Your Code: " + user.getEmailVerificationCode());
-
+    sendVerificationEmail(user);
     return getAuthenticationResponse(user);
+  }
+
+  public void sendVerificationEmail(User user) {
+    user.setEmailVerificationToken(TokenGenerator.generateToken(user.getUsername()));
+    emailService.sendSimpleEmail(user.getEmail(), "Verify Your FaithSafe Account",
+        "Open the following Url: " + "api.faithsafe.net/auth/verify?token="
+            + user.getEmailVerificationToken());
+    user.setEmailVerified(false);
   }
 
   public AuthenticationResponse authenticate(AuthenticationRequest request) {

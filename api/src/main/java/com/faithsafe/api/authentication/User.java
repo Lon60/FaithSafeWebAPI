@@ -41,7 +41,7 @@ public class User implements UserDetails {
 
   private boolean emailVerified;
 
-  private int emailVerificationCode;
+  private String emailVerificationToken;
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
