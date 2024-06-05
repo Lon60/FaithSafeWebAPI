@@ -1,11 +1,14 @@
 package com.faithsafe.api.authentication.user;
 
+import com.faithsafe.api.authentication.Role;
 import com.faithsafe.api.authentication.User;
 import com.faithsafe.api.authentication.UserRepository;
 import com.faithsafe.api.authentication.auth.AuthenticationServiceImpl;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -39,4 +42,11 @@ public class UserService {
         .build();
   }
 
+  public void deleteUser() {
+    User user = readUserOwn();
+    if (user.getRole() == Role.ADMIN) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admins cannot delete their own account");
+    }
+    userRepository.delete(user);
+  }
 }
