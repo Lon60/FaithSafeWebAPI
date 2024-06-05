@@ -40,7 +40,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
   private final JwtService jwtService;
   private final AuthenticationManager authenticationManager;
 
-  public AuthenticationResponse checkForRegister(RegisterRequest request) {
+  public void checkForRegister(RegisterRequest request) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     SimpleGrantedAuthority adminRole = new SimpleGrantedAuthority(Role.ADMIN.name());
 
@@ -67,7 +67,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     if (!emailPattern.matcher(request.getEmail()).matches()) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email is not valid");
     }
-    return register(request);
+    register(request);
   }
 
   public RedirectView verifyEmail(String token) {
@@ -88,14 +88,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
   }
 
-  private AuthenticationResponse register(RegisterRequest request) {
+  private void register(RegisterRequest request) {
     Role assignedRole = Objects.equals(request.getRole(), "ADMIN") ? Role.ADMIN : Role.USER;
     User user = User.builder().username(request.getUsername()).email(request.getEmail())
         .password(passwordEncoder.encode(request.getPassword())).role(assignedRole).build();
     userRepository.save(user);
 
     sendVerificationEmail(user);
-    return getAuthenticationResponse(user);
   }
 
   public void sendVerificationEmail(User user) {
@@ -134,6 +133,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
   }
 
   private AuthenticationResponse getAuthenticationResponse(User user) {
+    if (!user.isEmailVerified()) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email is not verified");
+    }
     Map<String, Object> extraClaims = new HashMap<>();
     extraClaims.put("role", "ROLE_" + user.getRole().toString());
 

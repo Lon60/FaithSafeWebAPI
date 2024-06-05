@@ -31,15 +31,8 @@ public class AuthenticationController {
       """, security = {@SecurityRequirement(name = "BearerAuth")})
   @PostMapping("/auth/register")
   @ResponseStatus(HttpStatus.CREATED)
-  public HttpHeaders register(@RequestBody RegisterRequest request) {
-    AuthenticationResponse authResponse = authenticationService.checkForRegister(request);
-
-    String jwtToken = authResponse.getAccessToken();
-    String refreshToken = authResponse.getRefreshToken();
-    HttpHeaders headers = new HttpHeaders();
-    headers.add("Authorization", "Bearer " + jwtToken);
-    headers.add("Refresh-Token", "Bearer " + refreshToken);
-    return headers;
+  public void register(@RequestBody RegisterRequest request) {
+    authenticationService.checkForRegister(request);
   }
 
   @Operation(description = """
