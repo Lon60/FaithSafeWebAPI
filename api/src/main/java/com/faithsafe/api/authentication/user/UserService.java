@@ -19,9 +19,7 @@ public class UserService {
 
   public User readUserOwn() {
     String username = SecurityContextHolder.getContext().getAuthentication().getName();
-    return userRepository.findByUsername(username).orElseThrow(
-        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
-    );
+    return userRepository.findByUsername(username).orElseThrow();
   }
 
   public void updateUserOwn(UserDto.WithPassword userDto) {
