@@ -29,4 +29,14 @@ public class UserService {
     if (userDto.getPassword() != null) user.setPassword(userDto.getPassword());
     userRepository.save(user);
   }
+
+  public UserDto getUser() {
+    User user = readUserOwn();
+    return UserDto.builder()
+        .username(user.getUsername())
+        .email(user.getEmail())
+        .role(user.getRole())
+        .build();
+  }
+
 }
