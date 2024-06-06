@@ -92,7 +92,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     Role assignedRole = Objects.equals(request.getRole(), "ADMIN") ? Role.ADMIN : Role.USER;
     User user = User.builder().username(request.getUsername()).email(request.getEmail())
         .password(passwordEncoder.encode(request.getPassword())).role(assignedRole).build();
-    userRepository.save(user);
 
     sendVerificationEmail(user);
   }
@@ -103,6 +102,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         "Open the following Url: " + "api.faithsafe.net/auth/verify?token="
             + user.getEmailVerificationToken());
     user.setEmailVerified(false);
+    userRepository.save(user);
   }
 
   public AuthenticationResponse authenticate(AuthenticationRequest request) {
