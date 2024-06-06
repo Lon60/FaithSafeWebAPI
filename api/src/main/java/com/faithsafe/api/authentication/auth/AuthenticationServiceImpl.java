@@ -99,7 +99,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
   public void sendVerificationEmail(User user) {
     user.setEmailVerificationToken(TokenGenerator.generateToken(user.getUsername()));
     emailService.sendSimpleEmail(user.getEmail(), "Verify Your FaithSafe Account",
-        "Open the following Url: " + "api.faithsafe.net/auth/verify?token="
+        "Open the following Url: " + "https://api.faithsafe.net/auth/verify?token="
             + user.getEmailVerificationToken());
     user.setEmailVerified(false);
     userRepository.save(user);
