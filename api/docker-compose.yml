@@ -20,3 +20,11 @@ services:
       - "8080:8080"
     depends_on:
       - postgres
+      - postfix
+
+  postfix:
+    build: ./postfix
+    container_name: FaithSafePostfix
+    ports:
+      - "1025:25"
+    restart: always
