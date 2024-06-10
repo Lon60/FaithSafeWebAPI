@@ -6,6 +6,9 @@ import com.faithsafe.api.authentication.JwtService;
 import com.faithsafe.api.authentication.Role;
 import com.faithsafe.api.authentication.User;
 import com.faithsafe.api.authentication.UserRepository;
+import jakarta.mail.MessagingException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.thymeleaf.context.Context;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,6 +27,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.thymeleaf.TemplateEngine;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.view.RedirectView;
 
@@ -31,8 +35,11 @@ import org.springframework.web.servlet.view.RedirectView;
 @RequiredArgsConstructor
 public class AuthenticationServiceImpl implements AuthenticationService {
 
+  @Autowired
+  private TemplateEngine templateEngine;
+
   private static final String EMAIL_PATTERN =
-      "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$";
+          "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$";
   private static final Pattern emailPattern = Pattern.compile(EMAIL_PATTERN);
   private final EmailService emailService;
   private final UserRepository userRepository;
@@ -47,7 +54,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     if (Objects.equals(request.getRole(), "ADMIN")) {
       if (!authentication.getAuthorities().contains(adminRole)) {
         throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-            "Only admins can create admin accounts");
+                "Only admins can create admin accounts");
       }
     }
 
@@ -91,26 +98,33 @@ public class AuthenticationServiceImpl implements AuthenticationService {
   private void register(RegisterRequest request) {
     Role assignedRole = Objects.equals(request.getRole(), "ADMIN") ? Role.ADMIN : Role.USER;
     User user = User.builder().username(request.getUsername()).email(request.getEmail())
-        .password(passwordEncoder.encode(request.getPassword())).role(assignedRole).build();
+            .password(passwordEncoder.encode(request.getPassword())).role(assignedRole).build();
 
     sendVerificationEmail(user);
   }
 
   public void sendVerificationEmail(User user) {
     user.setEmailVerificationToken(TokenGenerator.generateToken(user.getUsername()));
-    emailService.sendSimpleEmail(user.getEmail(), "Verify Your FaithSafe Account",
-        "Open the following Url: " + "https://api.faithsafe.net/auth/verify?token="
-            + user.getEmailVerificationToken());
-    user.setEmailVerified(false);
-    userRepository.save(user);
+    String verificationUrl = "https://api.faithsafe.net/auth/verify?token=" + user.getEmailVerificationToken();
+
+    try {
+      Context context = new Context();
+      context.setVariable("verificationUrl", verificationUrl);
+      String htmlBody = templateEngine.process("verification-email", context);
+      emailService.sendHtmlEmail(user.getEmail(), "Verify Your FaithSafe Account", htmlBody);
+      user.setEmailVerified(false);
+      userRepository.save(user);
+    } catch (MessagingException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to send verification email");
+    }
   }
 
   public AuthenticationResponse authenticate(AuthenticationRequest request) {
     authenticationManager.authenticate(
-        new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+            new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
 
     User user = userRepository.findByUsername(request.getUsername())
-        .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+            .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     return getAuthenticationResponse(user);
   }
 
@@ -123,7 +137,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     String username = jwtService.extractUsername(refreshToken);
 
     User user = userRepository.findByUsername(username)
-        .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+            .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
     if (!jwtService.isTokenValid(refreshToken, user)) {
       throw new AuthorizationDeniedException("Invalid refresh token", () -> false);
@@ -142,6 +156,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     String jwtToken = jwtService.generateToken(extraClaims, user);
     String refreshToken = jwtService.generateRefreshToken(user);
     return AuthenticationResponse.builder().accessToken(jwtToken).refreshToken(refreshToken)
-        .build();
+            .build();
   }
 }
