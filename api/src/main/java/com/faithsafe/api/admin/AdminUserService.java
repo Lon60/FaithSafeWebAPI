@@ -20,4 +20,14 @@ public class AdminUserService {
     public List<User> getAllUser() {
         return userRepository.findAll();
     }
+
+    public void updateUserByUsername(String username, User newUser) {
+        User user = userRepository.findByUsername(username).orElseThrow();
+
+        user.setUsername(newUser.getUsername());
+        user.setPassword(newUser.getPassword());
+        user.setRole(newUser.getRole());
+        user.setEmailVerified(newUser.isEmailVerified());
+        userRepository.save(user);
+    }
 }
