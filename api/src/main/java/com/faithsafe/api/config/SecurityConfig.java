@@ -35,14 +35,11 @@ public class SecurityConfig {
         "/auth", "/auth/**", "/error", "/swagger-ui/**", "/swagger-ui.html",
         "/v3/api-docs/**",
     };
-    String[] onlyAdmin = {
-
-    };
 
     return http
         .csrf(AbstractHttpConfigurer::disable)
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers(onlyAdmin)
+            .requestMatchers("/admin/**")
             .hasAuthority("ADMIN")
 
             .requestMatchers(whiteList)
