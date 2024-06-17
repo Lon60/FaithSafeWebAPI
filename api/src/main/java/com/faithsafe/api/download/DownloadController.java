@@ -61,7 +61,7 @@ public class DownloadController {
       ## Security
       This endpoint does require the **USER** Role or above.
       """, security = {@SecurityRequirement(name = "BearerAuth")})
-  @GetMapping("/macapp")
+  @GetMapping("/app")
   public ResponseEntity<ByteArrayResource> downloadMacApp() {
     ByteArrayResource resource = new ByteArrayResource(empty);
 
